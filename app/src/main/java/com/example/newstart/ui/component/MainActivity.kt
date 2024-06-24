@@ -1,87 +1,174 @@
 package com.example.newstart.ui.component
 
+import android.app.SearchManager
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.widget.SearchView
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.LiveData
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.newstart.R
+import com.example.newstart.RECIPE_ITEM_KEY
 import com.example.newstart.data.ResponseResult
 import com.example.newstart.data.dto.RecipesItem
-import com.example.newstart.fortest.printD
+import com.example.newstart.data.error.SEARCH_ERROR
+import com.example.newstart.databinding.HomeActivityBinding
 import com.example.newstart.ui.base.BaseActivity
+import com.example.newstart.ui.component.detial.DetailActivity
 import com.example.newstart.ui.component.recipe.RecipeListViewModel
-import com.example.newstart.ui.theme.NewStartTheme
+import com.example.newstart.utils.SingleEvent
 import com.example.newstart.utils.observe
+import com.example.newstart.utils.observeEvent
+import com.example.newstart.utils.setupSnackbar
+import com.example.newstart.utils.showToast
+import com.example.newstart.utils.toGone
+import com.example.newstart.utils.toVisible
+import com.google.android.material.snackbar.Snackbar
+import com.task.ui.component.recipes.adapter.RecipesAdapter
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : BaseActivity() {
 
+    private lateinit var binding: HomeActivityBinding
+
     private val recipesListViewModel: RecipeListViewModel by viewModels()
+    private lateinit var recipesAdapter: RecipesAdapter
+    override fun initData() {
+        observe(recipesListViewModel.recipesLiveData, ::handleRecipesList)
+        observe(recipesListViewModel.recipeSearchFound, ::showSearchResult)
+        observe(recipesListViewModel.noSearchFound, ::noSearchResult)
+        observeEvent(recipesListViewModel.openRecipeDetails, ::navigateToDetailsScreen)
+        observeSnackBarMessages(recipesListViewModel.showSnackBar)
+        observeToast(recipesListViewModel.showToast)
+    }
+
+    override fun initView() {
+        binding = HomeActivityBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+//        supportActionBar?.title = getString(R.string.recipe)
+        val layoutManager = LinearLayoutManager(this)
+        binding.rvRecipesList.layoutManager = layoutManager
+        binding.rvRecipesList.setHasFixedSize(true)
+        recipesListViewModel.getRecipes()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main_actions, menu)
+        // Associate searchable configuration with the SearchView
+        val searchView = menu?.findItem(R.id.action_search)?.actionView as SearchView
+        searchView.queryHint = getString(R.string.search_by_name)
+        val searchManager = getSystemService(Context.SEARCH_SERVICE) as SearchManager
+        searchView.apply {
+            setSearchableInfo(searchManager.getSearchableInfo(componentName))
+        }
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String): Boolean {
+                handleSearch(query)
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String): Boolean {
+                return false
+            }
+        })
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_refresh -> recipesListViewModel.getRecipes()
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun handleSearch(query: String) {
+        if (query.isNotEmpty()) {
+            binding.pbLoading.visibility = View.VISIBLE
+            recipesListViewModel.onSearchClick(query)
+        }
     }
 
 
-    override fun initViewModel() {
-//        setContent {
-//            NewStartTheme {
-//                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-//                    Greeting(
-//                        name = "Android",
-//                        modifier = Modifier.padding(innerPadding)
-//                    )
-//                }
-//            }
-//        }
-        recipesListViewModel.getRecipes()
-        observe(recipesListViewModel.recipesLiveData, ::handleRecipesList)
+    private fun bindListData(recipes: List<RecipesItem>) {
+        if (recipes.isNotEmpty()) {
+            recipesAdapter = RecipesAdapter(recipesListViewModel, recipes)
+            binding.rvRecipesList.adapter = recipesAdapter
+            showDataView(true)
+        } else {
+            showDataView(false)
+        }
+    }
+
+    private fun navigateToDetailsScreen(navigateEvent: SingleEvent<RecipesItem>) {
+        navigateEvent.getContentIfNotHandled()?.let {
+            val nextScreenIntent = Intent(this, DetailActivity::class.java).apply {
+                putExtra(RECIPE_ITEM_KEY, it)
+            }
+            startActivity(nextScreenIntent)
+        }
+    }
+
+
+    private fun observeSnackBarMessages(event: LiveData<SingleEvent<Any>>) {
+        binding.root.setupSnackbar(this, event, Snackbar.LENGTH_LONG)
+    }
+
+    private fun observeToast(event: LiveData<SingleEvent<Any>>) {
+        binding.root.showToast(this, event, Snackbar.LENGTH_LONG)
+    }
+
+    private fun showSearchError() {
+        recipesListViewModel.showToastMessage(SEARCH_ERROR)
+    }
+
+    private fun showDataView(show: Boolean) {
+        binding.tvNoData.visibility = if (show) View.GONE else View.VISIBLE
+        binding.rvRecipesList.visibility = if (show) View.VISIBLE else View.GONE
+        binding.pbLoading.toGone()
+    }
+
+    private fun showLoadingView() {
+        binding.pbLoading.toVisible()
+        binding.tvNoData.toGone()
+        binding.rvRecipesList.toGone()
+    }
+
+
+    private fun showSearchResult(recipesItem: RecipesItem) {
+        recipesListViewModel.openRecipeDetails(recipesItem)
+        binding.pbLoading.toGone()
+    }
+
+    private fun noSearchResult(unit: Unit) {
+        showSearchError()
+        binding.pbLoading.toGone()
     }
 
     private fun handleRecipesList(status: ResponseResult<List<RecipesItem>>) {
         when (status) {
-            is ResponseResult.Loading -> printD("loading")
-            is ResponseResult.Success -> status.data?.let { printD(it.toString()) }
+            is ResponseResult.Loading -> showLoadingView()
+            is ResponseResult.Success -> status.data?.let { bindListData(recipes = it) }
             is ResponseResult.Error -> {
-//                showDataView(false)
-                status.errorCode?.let { recipesListViewModel.showToastMessage(it) }
+                showDataView(false)
+//                status.errorCode?.let { recipesListViewModel.showToastMessage(it) }
             }
         }
     }
 
-    override fun initView() {
-        setContent {
-            NewStartTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(name = "Android", modifier = Modifier.padding(innerPadding))
-                }
-            }
-        }
-    }
+
 }
 
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
 
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    NewStartTheme {
-        Greeting("Android")
-    }
-}
+

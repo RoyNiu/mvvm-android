@@ -9,13 +9,13 @@ import androidx.activity.ComponentActivity
 
 abstract class BaseActivity : ComponentActivity() {
 
-    abstract fun initViewModel()
+    abstract fun initData()
     abstract fun initView()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         initView()
-        initViewModel()
+        initData()
     }
 
 

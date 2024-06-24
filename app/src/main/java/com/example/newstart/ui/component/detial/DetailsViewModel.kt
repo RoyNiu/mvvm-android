@@ -1,4 +1,4 @@
-package com.example.newstart.ui.component.recipe
+package com.example.newstart.ui.component.detial
 
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
@@ -8,16 +8,16 @@ import com.example.newstart.data.RecipeDataRepositorySource
 import com.example.newstart.data.ResponseResult
 import com.example.newstart.data.dto.RecipesItem
 import com.example.newstart.ui.base.BaseViewModel
+import com.example.newstart.utils.wrapEspressoIdlingResource
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.example.newstart.utils.wrapEspressoIdlingResource
-
 
 /**
  * Created by Roy
  */
-class RecipeViewModel @Inject constructor(private val dataRepository: RecipeDataRepositorySource) :
-    BaseViewModel() {
+@HiltViewModel
+open class DetailsViewModel @Inject constructor(private val dataRepository: RecipeDataRepositorySource) : BaseViewModel() {
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     val recipePrivate = MutableLiveData<RecipesItem>()
@@ -52,16 +52,11 @@ class RecipeViewModel @Inject constructor(private val dataRepository: RecipeData
                     dataRepository.removeFromFavourite(it).collect { isRemoved ->
                         when (isRemoved) {
                             is ResponseResult.Success -> {
-                                isRemoved.data?.let {
-                                    isFavouritePrivate.value =
-                                        ResponseResult.Success(!isRemoved.data)
-                                }
+                                isRemoved.data?.let { isFavouritePrivate.value = ResponseResult.Success(!isRemoved.data) }
                             }
-
                             is ResponseResult.Error -> {
                                 isFavouritePrivate.value = isRemoved
                             }
-
                             is ResponseResult.Loading -> {
                                 isFavouritePrivate.value = isRemoved
                             }
