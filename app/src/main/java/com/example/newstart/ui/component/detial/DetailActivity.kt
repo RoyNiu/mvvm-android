@@ -38,7 +38,7 @@ class DetailActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewModel.initIntentData(intent.getParcelableExtra(RECIPE_ITEM_KEY) ?: RecipesItem())
-//        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -104,4 +104,12 @@ class DetailActivity : BaseActivity() {
             R.drawable.ic_healthy_food_small
         )
     }
+
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
+    }
+
+
 }

@@ -55,7 +55,7 @@ class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        supportActionBar?.title = getString(R.string.recipe)
+        supportActionBar?.title = getString(R.string.recipe)
         val layoutManager = LinearLayoutManager(this)
         binding.rvRecipesList.layoutManager = layoutManager
         binding.rvRecipesList.setHasFixedSize(true)
@@ -160,7 +160,7 @@ class MainActivity : BaseActivity() {
             is ResponseResult.Success -> status.data?.let { bindListData(recipes = it) }
             is ResponseResult.Error -> {
                 showDataView(false)
-//                status.errorCode?.let { recipesListViewModel.showToastMessage(it) }
+                status.errorCode?.let { recipesListViewModel.showToastMessage(it) }
             }
         }
     }
