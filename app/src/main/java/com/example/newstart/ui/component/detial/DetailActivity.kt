@@ -7,9 +7,10 @@ import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import com.example.newstart.R
 import com.example.newstart.RECIPE_ITEM_KEY
-import com.example.newstart.data.ResponseResult
+import com.example.newstart.domain.ResponseResult
 import com.example.newstart.data.dto.RecipesItem
 import com.example.newstart.databinding.DetailsLayoutBinding
+import com.example.newstart.domain.DataError
 import com.example.newstart.ui.base.BaseActivity
 import com.example.newstart.utils.loadImage
 import com.example.newstart.utils.observe
@@ -50,7 +51,8 @@ class DetailActivity : BaseActivity() {
 
     fun onClickFavorite(mi: MenuItem) {
         mi.isCheckable = false
-        if (viewModel.isFavourite.value?.data == true) {
+        val currentState = viewModel.isFavourite.value
+        if (currentState is ResponseResult.Success && currentState.data) {
             viewModel.removeFromFavourites()
         } else {
             viewModel.addToFavourites()
@@ -62,14 +64,14 @@ class DetailActivity : BaseActivity() {
         observe(viewModel.isFavourite, ::handleIsFavourite)
     }
 
-    private fun handleIsFavourite(isFavourite: ResponseResult<Boolean>) {
+    private fun handleIsFavourite(isFavourite: ResponseResult<Boolean, DataError.Local>) {
         when (isFavourite) {
             is ResponseResult.Loading -> {
                 binding.pbLoading.toVisible()
             }
 
             is ResponseResult.Success -> {
-                isFavourite.data?.let {
+                isFavourite.data.let {
                     handleIsFavouriteUI(it)
                     menu?.findItem(R.id.add_to_favorite)?.isCheckable = true
                     binding.pbLoading.toGone()

@@ -4,7 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.example.newstart.FAVOURITES_KEY
 import com.example.newstart.SHARED_PREFERENCES_FILE_NAME
-import com.example.newstart.data.ResponseResult
+import com.example.newstart.domain.DataError
+import com.example.newstart.domain.ResponseResult
 import javax.inject.Inject
 
 /**
@@ -12,18 +13,18 @@ import javax.inject.Inject
  */
 class LocalData @Inject constructor(val context: Context) {
 
-    fun getCachedFavourites(): ResponseResult<Set<String>> {
+    fun getCachedFavourites(): ResponseResult<Set<String>, DataError.Local> {
         val sharedPref = context.getSharedPreferences(SHARED_PREFERENCES_FILE_NAME, 0)
         return ResponseResult.Success(sharedPref.getStringSet(FAVOURITES_KEY, setOf()) ?: setOf())
     }
 
-    fun isFavourite(id: String): ResponseResult<Boolean> {
+    fun isFavourite(id: String): ResponseResult<Boolean, DataError.Local> {
         val sharedPref = context.getSharedPreferences(SHARED_PREFERENCES_FILE_NAME, 0)
         val cache = sharedPref.getStringSet(FAVOURITES_KEY, setOf<String>()) ?: setOf()
         return ResponseResult.Success(cache.contains(id))
     }
 
-    fun cacheFavourites(ids: Set<String>): ResponseResult<Boolean> {
+    fun cacheFavourites(ids: Set<String>): ResponseResult<Boolean, DataError.Local> {
         val sharedPref = context.getSharedPreferences(SHARED_PREFERENCES_FILE_NAME, 0)
         val editor: SharedPreferences.Editor = sharedPref.edit()
         editor.putStringSet(FAVOURITES_KEY, ids)
@@ -32,7 +33,7 @@ class LocalData @Inject constructor(val context: Context) {
         return ResponseResult.Success(isSuccess)
     }
 
-    fun removeFromFavourites(id: String): ResponseResult<Boolean> {
+    fun removeFromFavourites(id: String): ResponseResult<Boolean, DataError.Local> {
         val sharedPref = context.getSharedPreferences(SHARED_PREFERENCES_FILE_NAME, 0)
         var set = sharedPref.getStringSet(FAVOURITES_KEY, mutableSetOf<String>())?.toMutableSet()
             ?: mutableSetOf()

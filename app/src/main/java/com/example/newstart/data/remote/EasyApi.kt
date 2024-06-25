@@ -1,10 +1,8 @@
 package com.example.newstart.data.remote
 
 import android.util.Log
-import com.example.newstart.data.ResponseResult
-import com.example.newstart.data.error.BaseError
-import com.example.newstart.data.error.DEFAULT_ERROR
-import com.example.newstart.data.error.NO_INTERNET_CONNECTION
+import com.example.newstart.domain.DataError
+import com.example.newstart.domain.ResponseResult
 import com.example.newstart.utils.NetWorkUtils
 import retrofit2.Response
 
@@ -26,10 +24,10 @@ object EasyApi {
     suspend fun <Service : Any, R> apiCall(
         serviceClass: Class<Service>,
         apiCall: suspend Service.() -> Response<R>
-    ): ResponseResult<R> {
+    ): ResponseResult<R, DataError.Network> {
         val service = getService(serviceClass)
         if (!NetWorkUtils.isConnected()) {
-            return ResponseResult.Error(NO_INTERNET_CONNECTION)
+            return ResponseResult.Error(DataError.Network.NO_INTERNET)
         }
         return try {
             val response = service.apiCall()
@@ -37,11 +35,12 @@ object EasyApi {
             if (response.isSuccessful) {
                 ResponseResult.Success(response.body()!!)
             } else {
-                ResponseResult.Error(responseCode, BaseError(responseCode, response.message()))
+                //FIXME
+                ResponseResult.Error(DataError.Network.SERVER_ERROR)
             }
         } catch (e: Exception) {
             Log.e("EasyApi", "API call failed", e)
-            ResponseResult.Error(DEFAULT_ERROR, BaseError(e))
+            ResponseResult.Error(DataError.Network.UNKNOWN)
         }
     }
 }

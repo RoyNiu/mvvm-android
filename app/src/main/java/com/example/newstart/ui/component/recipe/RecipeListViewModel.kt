@@ -5,8 +5,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.newstart.data.RecipeDataRepositorySource
-import com.example.newstart.data.ResponseResult
+import com.example.newstart.domain.ResponseResult
 import com.example.newstart.data.dto.RecipesItem
+import com.example.newstart.domain.DataError
 import com.example.newstart.ui.base.BaseViewModel
 import com.example.newstart.utils.SingleEvent
 import com.example.newstart.utils.wrapEspressoIdlingResource
@@ -26,8 +27,8 @@ constructor(private val dataRepositoryRepository: RecipeDataRepositorySource) : 
      * Data --> LiveData, Exposed as LiveData, Locally in viewModel as MutableLiveData
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    val recipesLiveDataPrivate = MutableLiveData<ResponseResult<List<RecipesItem>>>()
-    val recipesLiveData: LiveData<ResponseResult<List<RecipesItem>>> get() = recipesLiveDataPrivate
+    val recipesLiveDataPrivate = MutableLiveData<ResponseResult<List<RecipesItem>, DataError.Network>>()
+    val recipesLiveData: LiveData<ResponseResult<List<RecipesItem>, DataError.Network>> get() = recipesLiveDataPrivate
 
 
     //TODO check to make them as one Resource
@@ -79,16 +80,29 @@ constructor(private val dataRepositoryRepository: RecipeDataRepositorySource) : 
     }
 
     fun onSearchClick(recipeName: String) {
-        recipesLiveDataPrivate.value?.data?.let {
-            if (it.isNotEmpty()) {
-                for (recipe in it) {
-                    if (recipe.name.lowercase(Locale.ROOT).contains(recipeName.lowercase(Locale.ROOT))) {
-                        recipeSearchFoundPrivate.value = recipe
-                        return
-                    }
-                }
-            }
-        }
-        return noSearchFoundPrivate.postValue(Unit)
+        //TODO
+//        recipesLiveDataPrivate.value?.let {
+//            when(it){
+//                is ResponseResult.Success -> {
+//
+//                }else ->{
+//
+//                }
+//
+//            }
+//        }
+//         recipesLiveDataPrivate.value?.data?.let {
+//            if (it.isNotEmpty()) {
+//                for (recipe in it) {
+//                    if (recipe.name.lowercase(Locale.ROOT)
+//                            .contains(recipeName.lowercase(Locale.ROOT))
+//                    ) {
+//                        recipeSearchFoundPrivate.value = recipe
+//                        return
+//                    }
+//                }
+//            }
+//        }
+//         noSearchFoundPrivate.postValue(Unit)
     }
 }

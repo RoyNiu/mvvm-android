@@ -5,6 +5,8 @@ import com.example.newstart.data.local.LocalData
 import com.example.newstart.data.remote.EasyApi
 import com.example.newstart.data.remote.feature.RecipeRemote
 import com.example.newstart.data.remote.service.RecipesService
+import com.example.newstart.domain.DataError
+import com.example.newstart.domain.ResponseResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -20,9 +22,9 @@ class DataRepository @Inject constructor(
     private val ioDispatcher: CoroutineContext
 ) : RecipeDataRepositorySource {
 
-    override suspend fun requestRecipes(): Flow<ResponseResult<List<RecipesItem>>> {
+    override suspend fun requestRecipes(): Flow<ResponseResult<List<RecipesItem>, DataError.Network>> {
         return flow {
-            val result = EasyApi.apiCall(RecipesService::class.java){
+            val result = EasyApi.apiCall(RecipesService::class.java) {
                 fetchRecipes()
             }
 
@@ -31,33 +33,35 @@ class DataRepository @Inject constructor(
     }
 
 
-
-
-    override suspend fun addToFavourite(id: String): Flow<ResponseResult<Boolean>> {
+    override suspend fun addToFavourite(id: String): Flow<ResponseResult<Boolean, DataError.Local>> {
         return flow {
-            localRepository.getCachedFavourites().let {
-                it.data?.toMutableSet()?.let { set ->
-                    val isAdded = set.add(id)
-                    if (isAdded) {
-                        emit(localRepository.cacheFavourites(set))
-                    } else {
-                        emit(ResponseResult.Success(false))
+           when(val result = localRepository.getCachedFavourites()){
+               is ResponseResult.Error -> {
+                   emit(ResponseResult.Error(DataError.Local.UNKNOWN))
+               }
+               is ResponseResult.Success -> {
+                    result.data.toMutableSet().let { set->
+                        val isAdded = set.add(id)
+                        if (isAdded){
+                            emit(localRepository.cacheFavourites(set))
+                        }else{
+                            emit(ResponseResult.Success(false))
+                        }
                     }
-                }
-                it.code?.let { code ->
-                    emit(ResponseResult.Error(code))
-                }
-            }
+               }
+
+               is ResponseResult.Loading -> TODO()
+           }
         }.flowOn(ioDispatcher)
     }
 
-    override suspend fun removeFromFavourite(id: String): Flow<ResponseResult<Boolean>> {
+    override suspend fun removeFromFavourite(id: String): Flow<ResponseResult<Boolean, DataError.Local>> {
         return flow {
             emit(localRepository.removeFromFavourites(id))
         }.flowOn(ioDispatcher)
     }
 
-    override suspend fun isFavourite(id: String): Flow<ResponseResult<Boolean>> {
+    override suspend fun isFavourite(id: String): Flow<ResponseResult<Boolean, DataError.Local>> {
         return flow {
             emit(localRepository.isFavourite(id))
         }.flowOn(ioDispatcher)

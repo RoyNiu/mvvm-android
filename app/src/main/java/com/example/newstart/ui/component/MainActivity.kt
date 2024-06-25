@@ -13,10 +13,11 @@ import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.newstart.R
 import com.example.newstart.RECIPE_ITEM_KEY
-import com.example.newstart.data.ResponseResult
+import com.example.newstart.domain.ResponseResult
 import com.example.newstart.data.dto.RecipesItem
 import com.example.newstart.data.error.SEARCH_ERROR
 import com.example.newstart.databinding.HomeActivityBinding
+import com.example.newstart.domain.DataError
 import com.example.newstart.ui.base.BaseActivity
 import com.example.newstart.ui.component.detial.DetailActivity
 import com.example.newstart.ui.component.recipe.RecipeListViewModel
@@ -78,6 +79,7 @@ class MainActivity : BaseActivity() {
             }
 
             override fun onQueryTextChange(newText: String): Boolean {
+
                 return false
             }
         })
@@ -154,13 +156,14 @@ class MainActivity : BaseActivity() {
         binding.pbLoading.toGone()
     }
 
-    private fun handleRecipesList(status: ResponseResult<List<RecipesItem>>) {
+    private fun handleRecipesList(status: ResponseResult<List<RecipesItem>, DataError.Network>) {
         when (status) {
             is ResponseResult.Loading -> showLoadingView()
             is ResponseResult.Success -> status.data?.let { bindListData(recipes = it) }
             is ResponseResult.Error -> {
                 showDataView(false)
-                status.errorCode?.let { recipesListViewModel.showToastMessage(it) }
+                //FIXME
+//                status.errorCode?.let { recipesListViewModel.showToastMessage(it) }
             }
         }
     }
