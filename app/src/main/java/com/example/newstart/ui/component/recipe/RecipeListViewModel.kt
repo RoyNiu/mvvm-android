@@ -41,10 +41,6 @@ constructor(private val dataRepositoryRepository: RecipeDataRepositorySource) : 
     val recipeSearchFoundPrivate: MutableLiveData<RecipesItem> = MutableLiveData()
     val recipeSearchFound: LiveData<RecipesItem> get() = recipeSearchFoundPrivate
 
-//    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-//    val noSearchFoundPrivate: MutableLiveData<Unit> = MutableLiveData()
-//    val noSearchFound: LiveData<Unit> get() = noSearchFoundPrivate
-
     /**
      * UI actions as event, user action is single one time event, Shouldn't be multiple time consumption
      */
