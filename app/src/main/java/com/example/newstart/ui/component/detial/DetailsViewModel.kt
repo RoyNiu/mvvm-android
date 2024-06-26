@@ -27,8 +27,8 @@ open class DetailsViewModel @Inject constructor(private val dataRepository: Reci
     val recipeData: LiveData<RecipesItem> get() = recipePrivate
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    val isFavouritePrivate = MutableLiveData<ResponseResult<Boolean, DataError.Local>>()
-    val isFavourite: LiveData<ResponseResult<Boolean, DataError.Local>> get() = isFavouritePrivate
+    val isFavouritePrivate = MutableLiveData<ResponseResult<Boolean, DataError>>()
+    val isFavourite: LiveData<ResponseResult<Boolean, DataError>> get() = isFavouritePrivate
 
     fun initIntentData(recipe: RecipesItem) {
         recipePrivate.value = recipe

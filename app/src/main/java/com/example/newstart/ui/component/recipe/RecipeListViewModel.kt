@@ -4,11 +4,14 @@ import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.example.newstart.R
 import com.example.newstart.data.RecipeDataRepositorySource
-import com.example.newstart.domain.ResponseResult
 import com.example.newstart.data.dto.RecipesItem
 import com.example.newstart.domain.DataError
+import com.example.newstart.domain.Error
+import com.example.newstart.domain.ResponseResult
 import com.example.newstart.ui.base.BaseViewModel
+import com.example.newstart.utils.AppContext
 import com.example.newstart.utils.SingleEvent
 import com.example.newstart.utils.wrapEspressoIdlingResource
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,9 +29,11 @@ constructor(private val dataRepositoryRepository: RecipeDataRepositorySource) : 
     /**
      * Data --> LiveData, Exposed as LiveData, Locally in viewModel as MutableLiveData
      */
+    private var originData: List<RecipesItem>? = null
+
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    val recipesLiveDataPrivate = MutableLiveData<ResponseResult<List<RecipesItem>, DataError.Network>>()
-    val recipesLiveData: LiveData<ResponseResult<List<RecipesItem>, DataError.Network>> get() = recipesLiveDataPrivate
+    val recipesLiveDataPrivate = MutableLiveData<ResponseResult<List<RecipesItem>, DataError>>()
+    val recipesLiveData: LiveData<ResponseResult<List<RecipesItem>, DataError>> get() = recipesLiveDataPrivate
 
 
     //TODO check to make them as one Resource
@@ -36,9 +41,9 @@ constructor(private val dataRepositoryRepository: RecipeDataRepositorySource) : 
     val recipeSearchFoundPrivate: MutableLiveData<RecipesItem> = MutableLiveData()
     val recipeSearchFound: LiveData<RecipesItem> get() = recipeSearchFoundPrivate
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    val noSearchFoundPrivate: MutableLiveData<Unit> = MutableLiveData()
-    val noSearchFound: LiveData<Unit> get() = noSearchFoundPrivate
+//    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+//    val noSearchFoundPrivate: MutableLiveData<Unit> = MutableLiveData()
+//    val noSearchFound: LiveData<Unit> get() = noSearchFoundPrivate
 
     /**
      * UI actions as event, user action is single one time event, Shouldn't be multiple time consumption
@@ -65,6 +70,7 @@ constructor(private val dataRepositoryRepository: RecipeDataRepositorySource) : 
             wrapEspressoIdlingResource {
                 dataRepositoryRepository.requestRecipes().collect {
                     recipesLiveDataPrivate.value = it
+                    if (it is ResponseResult.Success) originData = it.data
                 }
             }
         }
@@ -74,35 +80,29 @@ constructor(private val dataRepositoryRepository: RecipeDataRepositorySource) : 
         openRecipeDetailsPrivate.value = SingleEvent(recipe)
     }
 
-    fun showToastMessage(errorCode: Int) {
-        val error = errorManager.getError(errorCode)
-        showToastPrivate.value = SingleEvent(error.content)
+    fun onSearchClick(recipeName: String) {
+        val filterList = originData?.filter {
+            it.name.lowercase(Locale.ROOT).contains(recipeName.lowercase(Locale.ROOT))
+        }?: emptyList()
+
+        if (filterList.isEmpty()) showToastPrivate.value = SingleEvent(R.string.search_no_result)
+        recipesLiveDataPrivate.postValue(ResponseResult.Success(filterList))
     }
 
-    fun onSearchClick(recipeName: String) {
-        //TODO
-//        recipesLiveDataPrivate.value?.let {
-//            when(it){
-//                is ResponseResult.Success -> {
-//
-//                }else ->{
-//
-//                }
-//
-//            }
-//        }
-//         recipesLiveDataPrivate.value?.data?.let {
-//            if (it.isNotEmpty()) {
-//                for (recipe in it) {
-//                    if (recipe.name.lowercase(Locale.ROOT)
-//                            .contains(recipeName.lowercase(Locale.ROOT))
-//                    ) {
-//                        recipeSearchFoundPrivate.value = recipe
-//                        return
-//                    }
-//                }
-//            }
-//        }
-//         noSearchFoundPrivate.postValue(Unit)
+    enum class SearchError : Error {
+        SEARCH_NO_RESULT
     }
+
+    fun handleError(e: DataError) {
+        showToastPrivate.value = SingleEvent(getErrorStr(e))
+    }
+
+
+    override fun getFeatureErrorMap(): Map<out Error, String> {
+        val map: Map<out Error, String> =
+            mapOf(SearchError.SEARCH_NO_RESULT to AppContext.getString(R.string.search_no_result))
+        return map
+    }
+
+
 }

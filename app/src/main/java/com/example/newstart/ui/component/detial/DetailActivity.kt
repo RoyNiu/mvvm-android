@@ -64,7 +64,7 @@ class DetailActivity : BaseActivity() {
         observe(viewModel.isFavourite, ::handleIsFavourite)
     }
 
-    private fun handleIsFavourite(isFavourite: ResponseResult<Boolean, DataError.Local>) {
+    private fun handleIsFavourite(isFavourite: ResponseResult<Boolean, DataError >) {
         when (isFavourite) {
             is ResponseResult.Loading -> {
                 binding.pbLoading.toVisible()

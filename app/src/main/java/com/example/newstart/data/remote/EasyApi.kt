@@ -24,7 +24,7 @@ object EasyApi {
     suspend fun <Service : Any, R> apiCall(
         serviceClass: Class<Service>,
         apiCall: suspend Service.() -> Response<R>
-    ): ResponseResult<R, DataError.Network> {
+    ): ResponseResult<R, DataError> {
         val service = getService(serviceClass)
         if (!NetWorkUtils.isConnected()) {
             return ResponseResult.Error(DataError.Network.NO_INTERNET)
@@ -35,8 +35,21 @@ object EasyApi {
             if (response.isSuccessful) {
                 ResponseResult.Success(response.body()!!)
             } else {
-                //FIXME
-                ResponseResult.Error(DataError.Network.SERVER_ERROR)
+                //just handle basic net error, some specific error are handle over to business and keep the error info
+                return when (responseCode) {
+                    in DataError.Network.entries.map { it.code } -> {
+                        ResponseResult.Error(DataError.Network.entries.first() {
+                            it.code == responseCode
+                        })
+                    }
+
+                    else -> ResponseResult.Error(
+                        DataError.CustomError(
+                            responseCode,
+                            response.message()
+                        )
+                    )
+                }
             }
         } catch (e: Exception) {
             Log.e("EasyApi", "API call failed", e)

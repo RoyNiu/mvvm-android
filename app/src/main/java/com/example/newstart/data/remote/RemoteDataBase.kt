@@ -1,9 +1,6 @@
 package com.example.newstart.data.remote
 
 import com.example.newstart.domain.ResponseResult
-import com.example.newstart.data.error.BaseError
-import com.example.newstart.data.error.DEFAULT_ERROR
-import com.example.newstart.data.error.NO_INTERNET_CONNECTION
 import com.example.newstart.domain.DataError
 import com.example.newstart.utils.NetWorkUtils
 import retrofit2.Response
@@ -22,7 +19,7 @@ abstract class RemoteDataBase<Service>(serviceGenerator: ApiServiceGenerator) {
 
     abstract fun getService(): Class<Service>
 
-    suspend fun <R> apiCall(apiCall: suspend Service.() -> Response<R>): ResponseResult<R, DataError.Network> {
+    suspend fun <R> apiCall(apiCall: suspend Service.() -> Response<R>): ResponseResult<R, DataError> {
         if (!NetWorkUtils.isConnected()) {
             return ResponseResult.Error(DataError.Network.NO_INTERNET)
 
@@ -33,8 +30,17 @@ abstract class RemoteDataBase<Service>(serviceGenerator: ApiServiceGenerator) {
             if (response.isSuccessful) {
                 return ResponseResult.Success(response.body()!!)
             } else {
-                //FIXME
-                return ResponseResult.Error(DataError.Network.SERVER_ERROR)
+                //just handle basic net error, some specific error are handle over to business and keep the error info
+                return when (responseCode) {
+                    in DataError.Network.entries.map { it.code } -> {
+                        ResponseResult.Error(DataError.Network.entries.first() {
+                            it.code == responseCode
+                        })
+                    }
+                    else -> ResponseResult.Error(
+                        DataError.CustomError(responseCode, response.message())
+                    )
+                }
             }
         } catch (e: Exception) {
             return ResponseResult.Error(DataError.Network.NO_INTERNET)

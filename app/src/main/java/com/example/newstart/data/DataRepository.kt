@@ -22,7 +22,7 @@ class DataRepository @Inject constructor(
     private val ioDispatcher: CoroutineContext
 ) : RecipeDataRepositorySource {
 
-    override suspend fun requestRecipes(): Flow<ResponseResult<List<RecipesItem>, DataError.Network>> {
+    override suspend fun requestRecipes(): Flow<ResponseResult<List<RecipesItem>, DataError>> {
         return flow {
             val result = EasyApi.apiCall(RecipesService::class.java) {
                 fetchRecipes()

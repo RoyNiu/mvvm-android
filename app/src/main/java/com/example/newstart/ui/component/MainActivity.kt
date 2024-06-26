@@ -15,7 +15,6 @@ import com.example.newstart.R
 import com.example.newstart.RECIPE_ITEM_KEY
 import com.example.newstart.domain.ResponseResult
 import com.example.newstart.data.dto.RecipesItem
-import com.example.newstart.data.error.SEARCH_ERROR
 import com.example.newstart.databinding.HomeActivityBinding
 import com.example.newstart.domain.DataError
 import com.example.newstart.ui.base.BaseActivity
@@ -42,7 +41,6 @@ class MainActivity : BaseActivity() {
     override fun initData() {
         observe(recipesListViewModel.recipesLiveData, ::handleRecipesList)
         observe(recipesListViewModel.recipeSearchFound, ::showSearchResult)
-        observe(recipesListViewModel.noSearchFound, ::noSearchResult)
         observeEvent(recipesListViewModel.openRecipeDetails, ::navigateToDetailsScreen)
         observeSnackBarMessages(recipesListViewModel.showSnackBar)
         observeToast(recipesListViewModel.showToast)
@@ -79,7 +77,7 @@ class MainActivity : BaseActivity() {
             }
 
             override fun onQueryTextChange(newText: String): Boolean {
-
+                recipesListViewModel.onSearchClick(newText)
                 return false
             }
         })
@@ -95,7 +93,7 @@ class MainActivity : BaseActivity() {
 
     private fun handleSearch(query: String) {
         if (query.isNotEmpty()) {
-            binding.pbLoading.visibility = View.VISIBLE
+            showLoadingView()
             recipesListViewModel.onSearchClick(query)
         }
     }
@@ -129,9 +127,6 @@ class MainActivity : BaseActivity() {
         binding.root.showToast(this, event, Snackbar.LENGTH_LONG)
     }
 
-    private fun showSearchError() {
-        recipesListViewModel.showToastMessage(SEARCH_ERROR)
-    }
 
     private fun showDataView(show: Boolean) {
         binding.tvNoData.visibility = if (show) View.GONE else View.VISIBLE
@@ -151,22 +146,17 @@ class MainActivity : BaseActivity() {
         binding.pbLoading.toGone()
     }
 
-    private fun noSearchResult(unit: Unit) {
-        showSearchError()
-        binding.pbLoading.toGone()
-    }
-
-    private fun handleRecipesList(status: ResponseResult<List<RecipesItem>, DataError.Network>) {
+    private fun handleRecipesList(status: ResponseResult<List<RecipesItem>, DataError>) {
         when (status) {
             is ResponseResult.Loading -> showLoadingView()
-            is ResponseResult.Success -> status.data?.let { bindListData(recipes = it) }
+            is ResponseResult.Success -> bindListData(recipes = status.data)
             is ResponseResult.Error -> {
                 showDataView(false)
-                //FIXME
-//                status.errorCode?.let { recipesListViewModel.showToastMessage(it) }
+                recipesListViewModel.handleError(status.error)
             }
         }
     }
+
 
 
 }

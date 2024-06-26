@@ -36,6 +36,8 @@
     <string name="error_disk_full">Failed to save the item because your device\'s disk is full</string>
     <string name="error_serialization">Oops, couldn\'t parse data.</string>
     <string name="error_password_too_short">The password is too short</string>
+    <string name="disk_full">The disk is full</string>
+    <string name="search_no_result">Search no result</string>
 
 
 

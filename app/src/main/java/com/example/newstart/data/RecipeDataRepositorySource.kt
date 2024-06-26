@@ -11,9 +11,9 @@ import kotlinx.coroutines.flow.Flow
 interface RecipeDataRepositorySource {
 
 
-    suspend fun requestRecipes(): Flow<ResponseResult<List<RecipesItem>,DataError.Network>>
-    suspend fun addToFavourite(id: String): Flow<ResponseResult<Boolean, DataError.Local>>
-    suspend fun removeFromFavourite(id: String): Flow<ResponseResult<Boolean, DataError.Local>>
-    suspend fun isFavourite(id: String): Flow<ResponseResult<Boolean, DataError.Local>>
+    suspend fun requestRecipes(): Flow<ResponseResult<List<RecipesItem>,DataError>>
+    suspend fun addToFavourite(id: String): Flow<ResponseResult<Boolean, DataError>>
+    suspend fun removeFromFavourite(id: String): Flow<ResponseResult<Boolean, DataError>>
+    suspend fun isFavourite(id: String): Flow<ResponseResult<Boolean, DataError>>
 
 }
